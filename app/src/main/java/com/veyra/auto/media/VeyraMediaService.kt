@@ -1,5 +1,7 @@
 package com.veyra.auto.media
 
+import androidx.media3.common.AudioAttributes
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.exoplayer.ExoPlayer
@@ -19,7 +21,10 @@ class VeyraMediaService : MediaLibraryService() {
 
     override fun onCreate() {
         super.onCreate()
-        val exo = ExoPlayer.Builder(this).build()
+        val exo = ExoPlayer.Builder(this)
+            .setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(), true)
+            .setHandleAudioBecomingNoisy(true)
+            .build()
         player = exo
         librarySession = MediaLibrarySession.Builder(this, exo, LibraryCallback()).build()
     }

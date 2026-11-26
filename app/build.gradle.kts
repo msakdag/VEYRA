@@ -11,8 +11,8 @@ android {
         applicationId = "com.veyra.auto"
         minSdk = 26
         targetSdk = 35
-        versionCode = 11
-        versionName = "0.1.10"
+        versionCode = 12
+        versionName = "0.2.0"
     }
     buildFeatures { compose = true }
 
@@ -38,5 +38,6 @@ dependencies {
     implementation("androidx.media3:media3-session:1.5.1")
     implementation("androidx.media3:media3-exoplayer:1.5.1")
     implementation("com.google.guava:guava:33.3.1-android")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

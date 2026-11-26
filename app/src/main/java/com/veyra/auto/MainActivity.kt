@@ -2,8 +2,8 @@ package com.veyra.auto
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -16,72 +16,94 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veyra.auto.media.PlayerConnection
 
-private val Navy = Color(0xFF101827)
-private val Panel = Color(0xFF18283B)
-private val Mint = Color(0xFF69E0D0)
-private val Muted = Color(0xFF9CAEC2)
+internal val Navy = Color(0xFF101827)
+internal val Panel = Color(0xFF18283B)
+internal val Mint = Color(0xFF69E0D0)
+internal val Muted = Color(0xFF9CAEC2)
 
 class MainActivity : ComponentActivity() {
+    private lateinit var connection: PlayerConnection
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { VeyraHome() }
+        connection = PlayerConnection(applicationContext)
+        setContent { VeyraApp(connection) }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        connection.connect()
+    }
+
+    override fun onStop() {
+        connection.disconnect()
+        super.onStop()
     }
 }
 
 @Composable
-fun VeyraHome() {
+fun VeyraApp(connection: PlayerConnection) {
     var selected by remember { mutableStateOf<String?>(null) }
     BackHandler(enabled = selected != null) { selected = null }
     MaterialTheme(colorScheme = darkColorScheme(primary = Mint, background = Navy, surface = Panel)) {
-        Column(
-            modifier = Modifier.fillMaxSize().background(Navy).padding(22.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Spacer(Modifier.height(18.dp))
-            Box(Modifier.size(88.dp).background(Panel, RoundedCornerShape(26.dp)), contentAlignment = Alignment.Center) {
-                Text("V", color = Mint, fontSize = 46.sp, fontWeight = FontWeight.Bold)
-            }
-            Spacer(Modifier.height(14.dp))
-            Text("VEYRA", color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold, letterSpacing = 4.sp)
-            Text("DRIVE • LISTEN • DISCOVER", color = Mint, fontSize = 11.sp, letterSpacing = 1.3.sp)
-            Spacer(Modifier.height(26.dp))
-            if (selected == null) {
-                Text("Hoş geldin", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
-                Text("Araç içi multimedya deneyimin", color = Muted, fontSize = 14.sp)
-                Spacer(Modifier.height(22.dp))
-                HomeTile("Medya", "Yerel medya modülü • Faz 2", "Bu modül FAZ 2'de etkinleştirilecek.") { selected = "Medya" }
-                HomeTile("Radyo", "İnternet radyosu • Faz 5", "Radyo modülü geliştirme planında.") { selected = "Radyo" }
-                HomeTile("Sesli komut", "Türkçe ses tanıma • Faz 4", "Sesli komut altyapısı FAZ 4'te eklenecek.") { selected = "Sesli komut" }
-                HomeTile("Android Auto", "Araç ekranı • Faz 1", "Android Auto temel entegrasyonu prototip aşamasında.") { selected = "Android Auto" }
-                HomeTile("Ayarlar", "Proje bilgileri • Faz 1", "VEYRA 0.1.9 • Android Auto temel prototipi") { selected = "Ayarlar" }
-            } else {
-                Spacer(Modifier.height(16.dp))
-                Text(selected!!, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    when (selected) {
-                        "Medya" -> "Yerel medya oynatma ve medya kontrol arayüzü FAZ 2 kapsamında geliştirilecek."
-                        "Radyo" -> "Favori istasyonlar ve internet radyosu FAZ 5 kapsamında geliştirilecek."
-                        "Sesli komut" -> "Türkçe offline komut tanıma FAZ 4 kapsamında geliştirilecek."
-                        "Android Auto" -> "Araç ekranı bağlantısı ve şablon uyumluluğu test aşamalarında tamamlanacak."
-                        else -> "VEYRA, Android Auto odaklı multimedya uygulaması. Sürüm 0.1.7."
-                    },
-                    color = Muted, fontSize = 15.sp
-                )
-                Spacer(Modifier.height(24.dp))
-                Button(onClick = { selected = null }, colors = ButtonDefaults.buttonColors(containerColor = Mint)) {
-                    Text("Ana ekrana dön", color = Navy)
-                }
-            }
-            Spacer(Modifier.weight(1f))
-            Text("VEYRA • 0.1.9 • Prototip", color = Muted, fontSize = 12.sp)
+        if (selected == "Medya") {
+            MediaScreen(connection) { selected = null }
+        } else {
+            VeyraHome(selected) { selected = it }
         }
     }
 }
 
 @Composable
-private fun HomeTile(title: String, subtitle: String, detail: String, onClick: () -> Unit) {
+fun VeyraHome(selected: String?, onSelect: (String?) -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize().background(Navy).statusBarsPadding().navigationBarsPadding().padding(22.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(Modifier.height(18.dp))
+        Box(Modifier.size(88.dp).background(Panel, RoundedCornerShape(26.dp)), contentAlignment = Alignment.Center) {
+            Text("V", color = Mint, fontSize = 46.sp, fontWeight = FontWeight.Bold)
+        }
+        Spacer(Modifier.height(14.dp))
+        Text("VEYRA", color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold, letterSpacing = 4.sp)
+        Text("DRIVE • LISTEN • DISCOVER", color = Mint, fontSize = 11.sp, letterSpacing = 1.3.sp)
+        Spacer(Modifier.height(26.dp))
+        if (selected == null) {
+            Text("Hoş geldin", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
+            Text("Araç içi multimedya deneyimin", color = Muted, fontSize = 14.sp)
+            Spacer(Modifier.height(22.dp))
+            HomeTile("Medya", "Telefondaki müzikler • Faz 2") { onSelect("Medya") }
+            HomeTile("Android Auto", "Araç ekranı • Faz 3") { onSelect("Android Auto") }
+            HomeTile("Radyo", "İnternet radyosu • Faz 4") { onSelect("Radyo") }
+            HomeTile("Sesli komut", "Türkçe ses tanıma • Faz 5") { onSelect("Sesli komut") }
+            HomeTile("Ayarlar", "Proje bilgileri") { onSelect("Ayarlar") }
+        } else {
+            Spacer(Modifier.height(16.dp))
+            Text(selected, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(12.dp))
+            Text(
+                when (selected) {
+                    "Radyo" -> "İnternet radyoları, favoriler ve istasyon listesi FAZ 4 kapsamında geliştirilecek."
+                    "Sesli komut" -> "Türkçe komutlarla müzik ve radyo kontrolü FAZ 5 kapsamında eklenecek."
+                    "Android Auto" -> "Medya kataloğunu araç ekranında gösterme ve kontrolleri bağlama FAZ 3 kapsamında yapılacak."
+                    else -> "VEYRA, Android Auto odaklı multimedya uygulaması. Sürüm 0.2.0."
+                },
+                color = Muted, fontSize = 15.sp
+            )
+            Spacer(Modifier.height(24.dp))
+            Button(onClick = { onSelect(null) }, colors = ButtonDefaults.buttonColors(containerColor = Mint)) {
+                Text("Ana ekrana dön", color = Navy)
+            }
+        }
+        Spacer(Modifier.weight(1f))
+        Text("VEYRA • 0.2.0 • Prototip", color = Muted, fontSize = 12.sp)
+    }
+}
+
+@Composable
+private fun HomeTile(title: String, subtitle: String, onClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp).clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = Panel),
