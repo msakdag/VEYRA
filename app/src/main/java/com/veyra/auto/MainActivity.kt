@@ -75,7 +75,7 @@ fun VeyraHome(selected: String?, onSelect: (String?) -> Unit) {
             Text("Araç içi multimedya deneyimin", color = Muted, fontSize = 14.sp)
             Spacer(Modifier.height(22.dp))
             HomeTile("Medya", "Telefondaki müzikler • Faz 2") { onSelect("Medya") }
-            HomeTile("Android Auto", "Araç ekranı • Faz 3") { onSelect("Android Auto") }
+            HomeTile("Android Auto", "Araç ekranı • Hazır") { onSelect("Android Auto") }
             HomeTile("Radyo", "İnternet radyosu • Faz 4") { onSelect("Radyo") }
             HomeTile("Sesli komut", "Türkçe ses tanıma • Faz 5") { onSelect("Sesli komut") }
             HomeTile("Ayarlar", "Proje bilgileri") { onSelect("Ayarlar") }
@@ -87,8 +87,8 @@ fun VeyraHome(selected: String?, onSelect: (String?) -> Unit) {
                 when (selected) {
                     "Radyo" -> "İnternet radyoları, favoriler ve istasyon listesi FAZ 4 kapsamında geliştirilecek."
                     "Sesli komut" -> "Türkçe komutlarla müzik ve radyo kontrolü FAZ 5 kapsamında eklenecek."
-                    "Android Auto" -> "Medya kataloğunu araç ekranında gösterme ve kontrolleri bağlama FAZ 3 kapsamında yapılacak."
-                    else -> "VEYRA, Android Auto odaklı multimedya uygulaması. Sürüm 0.2.0."
+                    "Android Auto" -> "Araç ekranında VEYRA medya uygulaması olarak görünür. Önce Medya bölümünde müzik iznini ver."
+                    else -> "VEYRA, Android Auto odaklı multimedya uygulaması. Sürüm 0.3.0."
                 },
                 color = Muted, fontSize = 15.sp
             )
@@ -98,7 +98,7 @@ fun VeyraHome(selected: String?, onSelect: (String?) -> Unit) {
             }
         }
         Spacer(Modifier.weight(1f))
-        Text("VEYRA • 0.2.0 • Prototip", color = Muted, fontSize = 12.sp)
+        Text("VEYRA • 0.3.0 • Prototip", color = Muted, fontSize = 12.sp)
     }
 }
 
