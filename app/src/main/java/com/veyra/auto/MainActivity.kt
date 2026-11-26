@@ -48,10 +48,13 @@ fun VeyraApp(connection: PlayerConnection) {
     var selected by remember { mutableStateOf<String?>(null) }
     BackHandler(enabled = selected != null) { selected = null }
     MaterialTheme(colorScheme = darkColorScheme(primary = Mint, background = Navy, surface = Panel)) {
-        if (selected == "Medya") {
-            MediaScreen(connection) { selected = null }
-        } else {
-            VeyraHome(selected) { selected = it }
+        when (selected) {
+            "Medya" -> MediaScreen(connection) { selected = null }
+            "Radyo" -> RadioScreen(connection) { selected = null }
+            "Sesli komut" -> VoiceScreen(connection) { selected = null }
+            "YouTube" -> YouTubeScreen { selected = null }
+            "Ayarlar" -> SettingsScreen { selected = null }
+            else -> VeyraHome(selected) { selected = it }
         }
     }
 }
@@ -76,8 +79,9 @@ fun VeyraHome(selected: String?, onSelect: (String?) -> Unit) {
             Spacer(Modifier.height(22.dp))
             HomeTile("Medya", "Telefondaki müzikler • Faz 2") { onSelect("Medya") }
             HomeTile("Android Auto", "Araç ekranı • Hazır") { onSelect("Android Auto") }
-            HomeTile("Radyo", "İnternet radyosu • Faz 4") { onSelect("Radyo") }
-            HomeTile("Sesli komut", "Türkçe ses tanıma • Faz 5") { onSelect("Sesli komut") }
+            HomeTile("Radyo", "İnternet yayınları • İlk sürüm") { onSelect("Radyo") }
+            HomeTile("Sesli komut", "Türkçe ses tanıma • İlk sürüm") { onSelect("Sesli komut") }
+            HomeTile("YouTube", "İçerik keşfi ve arama") { onSelect("YouTube") }
             HomeTile("Ayarlar", "Proje bilgileri") { onSelect("Ayarlar") }
         } else {
             Spacer(Modifier.height(16.dp))
@@ -85,8 +89,9 @@ fun VeyraHome(selected: String?, onSelect: (String?) -> Unit) {
             Spacer(Modifier.height(12.dp))
             Text(
                 when (selected) {
-                    "Radyo" -> "İnternet radyoları, favoriler ve istasyon listesi FAZ 4 kapsamında geliştirilecek."
-                    "Sesli komut" -> "Türkçe komutlarla müzik ve radyo kontrolü FAZ 5 kapsamında eklenecek."
+                    "Radyo" -> "Radyo modülünü açmak için ana menüye dön."
+                    "Sesli komut" -> "Türkçe sesli komut modülü açmak için ana menüye dön."
+                    "YouTube" -> "YouTube modülü açmak için ana menüye dön."
                     "Android Auto" -> "Araç ekranında VEYRA medya uygulaması olarak görünür. Önce Medya bölümünde müzik iznini ver."
                     else -> "VEYRA, Android Auto odaklı multimedya uygulaması. Sürüm 0.3.0."
                 },
@@ -98,7 +103,7 @@ fun VeyraHome(selected: String?, onSelect: (String?) -> Unit) {
             }
         }
         Spacer(Modifier.weight(1f))
-        Text("VEYRA • 0.3.0 • Prototip", color = Muted, fontSize = 12.sp)
+        Text("VEYRA • 0.8.0 • Geliştirme", color = Muted, fontSize = 12.sp)
     }
 }
 

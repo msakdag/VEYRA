@@ -98,4 +98,12 @@ class PlayerConnection(private val context: Context) {
     fun previous() { controller?.seekToPrevious() }
 
     fun seekTo(ms: Long) { controller?.seekTo(ms) }
+
+    fun playStream(name: String, url: String) {
+        controller?.let { c ->
+            val item = MediaItem.Builder().setUri(url).setMediaId(url)
+                .setMediaMetadata(androidx.media3.common.MediaMetadata.Builder().setTitle(name).setArtist("İnternet Radyosu").build()).build()
+            c.setMediaItem(item); c.prepare(); c.play()
+        }
+    }
 }

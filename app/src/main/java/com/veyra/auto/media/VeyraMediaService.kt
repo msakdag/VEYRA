@@ -77,6 +77,23 @@ class VeyraMediaService : MediaLibraryService() {
         return if (c.isNotEmpty()) c else refreshSongs()
     }
 
+    // Stations use the same SharedPreferences format as the phone Radio screen.
+    private fun loadStations(): List<MediaItem> =
+        getSharedPreferences("veyra_radio", MODE_PRIVATE)
+            .getString("stations", "")?.split("\n")?.filter { it.contains("|") }
+            ?.mapNotNull { row ->
+                val parts = row.split("|", limit = 2)
+                if (parts.size != 2 || parts[1].isBlank()) null else MediaItem.Builder()
+                    .setMediaId("radio:${parts[1]}")
+                    .setUri(parts[1])
+                    .setMediaMetadata(MediaMetadata.Builder()
+                        .setTitle(parts[0].ifBlank { "İnternet Radyosu" })
+                        .setArtist("VEYRA • İnternet Radyosu")
+                        .setIsBrowsable(false).setIsPlayable(true)
+                        .build())
+                    .build()
+            } ?: emptyList()
+
     private fun folder(id: String, title: String): MediaItem =
         MediaItem.Builder()
             .setMediaId(id)
@@ -110,7 +127,8 @@ class VeyraMediaService : MediaLibraryService() {
                 val found: MediaItem? = when (mediaId) {
                     "root" -> folder("root", "VEYRA")
                     "songs" -> folder("songs", "Tüm parçalar")
-                    else -> cachedOrLoad().firstOrNull { it.mediaId == mediaId }
+                    "radio" -> folder("radio", "İnternet radyoları")
+                    else -> (cachedOrLoad() + loadStations()).firstOrNull { it.mediaId == mediaId }
                 }
                 if (found != null) LibraryResult.ofItem(found, null)
                 else LibraryResult.ofError(LibraryResult.RESULT_ERROR_BAD_VALUE)
@@ -126,8 +144,9 @@ class VeyraMediaService : MediaLibraryService() {
         ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> =
             executor.submit(Callable<LibraryResult<ImmutableList<MediaItem>>> {
                 val entries: List<MediaItem> = when (parentId) {
-                    "root" -> listOf(folder("songs", "Tüm parçalar"))
+                    "root" -> listOf(folder("songs", "Tüm parçalar"), folder("radio", "İnternet radyoları"))
                     "songs" -> refreshSongs()
+                    "radio" -> loadStations()
                     else -> emptyList()
                 }
                 val from = (page.toLong() * pageSize).coerceIn(0L, entries.size.toLong()).toInt()
@@ -141,10 +160,10 @@ class VeyraMediaService : MediaLibraryService() {
             mediaItems: MutableList<MediaItem>
         ): ListenableFuture<MutableList<MediaItem>> =
             executor.submit(Callable<MutableList<MediaItem>> {
-                val songs = cachedOrLoad()
+                val allItems = cachedOrLoad() + loadStations()
                 mediaItems.mapNotNull { item ->
                     if (item.localConfiguration != null) item
-                    else songs.firstOrNull { it.mediaId == item.mediaId }
+                    else allItems.firstOrNull { it.mediaId == item.mediaId }
                 }.toMutableList()
             })
 
@@ -157,17 +176,22 @@ class VeyraMediaService : MediaLibraryService() {
         ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> =
             executor.submit(Callable<MediaSession.MediaItemsWithStartPosition> {
                 val songs = cachedOrLoad()
+                val stations = loadStations()
+                val allItems = songs + stations
                 if (mediaItems.size == 1) {
-                    val idx = songs.indexOfFirst { it.mediaId == mediaItems[0].mediaId }
-                    if (idx >= 0) {
-                        return@Callable MediaSession.MediaItemsWithStartPosition(songs, idx, startPositionMs)
+                    val target = allItems.indexOfFirst { it.mediaId == mediaItems[0].mediaId }
+                    if (target >= 0) {
+                        // Preserve the complete queue for local songs or stations of the same category.
+                        val queue = if (mediaItems[0].mediaId.startsWith("radio:")) stations else songs
+                        val idx = queue.indexOfFirst { it.mediaId == mediaItems[0].mediaId }
+                        if (idx >= 0) return@Callable MediaSession.MediaItemsWithStartPosition(queue, idx, startPositionMs)
                     }
                 }
                 val resolved = mediaItems.mapNotNull { item ->
                     if (item.localConfiguration != null) item
-                    else songs.firstOrNull { it.mediaId == item.mediaId }
+                    else allItems.firstOrNull { it.mediaId == item.mediaId }
                 }
-                MediaSession.MediaItemsWithStartPosition(resolved, startIndex, startPositionMs)
+                MediaSession.MediaItemsWithStartPosition(resolved, startIndex.coerceIn(0, (resolved.size - 1).coerceAtLeast(0)), startPositionMs)
             })
     }
 }

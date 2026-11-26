@@ -11,8 +11,8 @@ android {
         applicationId = "com.veyra.auto"
         minSdk = 26
         targetSdk = 35
-        versionCode = 13
-        versionName = "0.3.0"
+        versionCode = 18
+        versionName = "0.8.0"
     }
     buildFeatures { compose = true }
 
