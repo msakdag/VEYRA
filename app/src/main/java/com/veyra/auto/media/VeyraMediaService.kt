@@ -3,33 +3,35 @@ package com.veyra.auto.media
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.session.MediaLibraryService
-import androidx.media3.session.MediaSession
-import androidx.media3.session.MediaLibraryService.MediaLibrarySession
-import androidx.media3.session.MediaLibraryService.LibraryParams
 import androidx.media3.session.LibraryResult
+import androidx.media3.session.MediaLibraryService
+import androidx.media3.session.MediaLibraryService.LibraryParams
+import androidx.media3.session.MediaLibraryService.MediaLibrarySession
+import androidx.media3.session.MediaSession
+import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 
 class VeyraMediaService : MediaLibraryService() {
 
-    private lateinit var player: ExoPlayer
-    private lateinit var librarySession: MediaLibrarySession
+    private var player: ExoPlayer? = null
+    private var librarySession: MediaLibrarySession? = null
 
     override fun onCreate() {
         super.onCreate()
-        player = ExoPlayer.Builder(this).build()
-        librarySession = MediaLibrarySession.Builder(
-            this, player, LibraryCallback()
-        ).build()
+        val exo = ExoPlayer.Builder(this).build()
+        player = exo
+        librarySession = MediaLibrarySession.Builder(this, exo, LibraryCallback()).build()
     }
 
-    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession =
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? =
         librarySession
 
     override fun onDestroy() {
-        if (::librarySession.isInitialized) librarySession.release()
-        if (::player.isInitialized) player.release()
+        librarySession?.release()
+        librarySession = null
+        player?.release()
+        player = null
         super.onDestroy()
     }
 
@@ -39,8 +41,8 @@ class VeyraMediaService : MediaLibraryService() {
             .setMediaMetadata(
                 MediaMetadata.Builder()
                     .setTitle(title)
-                    .setBrowsable(browsable)
-                    .setPlayable(!browsable)
+                    .setIsBrowsable(browsable)
+                    .setIsPlayable(!browsable)
                     .build()
             )
             .build()
@@ -63,9 +65,8 @@ class VeyraMediaService : MediaLibraryService() {
             page: Int,
             pageSize: Int,
             params: LibraryParams?
-        ): ListenableFuture<LibraryResult<List<MediaItem>>> {
-
-            val entries = when (parentId) {
+        ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
+            val entries: List<MediaItem> = when (parentId) {
                 "root" -> listOf(
                     item("media", "Medya", true),
                     item("radio", "Radyo", true),
@@ -76,12 +77,10 @@ class VeyraMediaService : MediaLibraryService() {
                 "voice" -> listOf(item("voice-info", "Türkçe sesli komut", false))
                 else -> emptyList()
             }
-
-            val from = (page * pageSize).coerceAtMost(entries.size)
-            val to = ((page + 1) * pageSize).coerceAtMost(entries.size)
-
+            val from = (page.toLong() * pageSize).coerceIn(0L, entries.size.toLong()).toInt()
+            val to = ((page.toLong() + 1) * pageSize).coerceIn(0L, entries.size.toLong()).toInt()
             return Futures.immediateFuture(
-                LibraryResult.ofItemList(entries.subList(from, to), params)
+                LibraryResult.ofItemList(ImmutableList.copyOf(entries.subList(from, to)), params)
             )
         }
     }
